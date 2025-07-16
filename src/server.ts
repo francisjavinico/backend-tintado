@@ -5,11 +5,18 @@ export const app = express();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://frontend-tintado.vercel.app",
-      "https://frontend-tintado-7fctaokae-francisco-nietos-projects.vercel.app",
-    ],
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        origin === "http://localhost:5173" ||
+        origin === "https://frontend-tintado.vercel.app" ||
+        /\.vercel\.app$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     credentials: true,
   })
 );
