@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  passwordResetToken       String?   @db.VarChar(255)
+  passwordResetTokenExpires DateTime?
+}
+
+enum Role {
+  admin
+  empleado
+}
+
+model Cliente {
+  id                 Int        @id @default(autoincrement())
+  nombre             String?
+  apellido           String?
+  email              String?
+  telefono           String     @unique
+  documentoIdentidad String?    @unique
+  direccion          String     // Nueva dirección obligatoria
+  consentimientoLOPD Boolean    @default(false)
+  aceptaPromociones  Boolean    @default(false) // <-- Nuevo campo
+  citas              Cita[]
+  facturas           Factura[]
+  garantias          Garantia[]
+  recibos            Recibo[]
+  createdAt DateTime @default(now())
+}
+
+model Vehiculo {
+  id            Int    @id @default(autoincrement())
+  marca         String
+  modelo        String
+  año          Int
+  numeroPuertas Int
+  citas         Cita[]
+  presupuestos PresupuestoVehiculo[]
+  @@unique([marca, modelo, año, numeroPuertas])
+}
+
+model Cita {
+  id             Int        @id @default(autoincrement())
+  fecha          DateTime
+  descripcion    String?
+  estado         EstadoCita
+  telefono       String
+  presupuestoMin Float
+  presupuestoMax Float
+  presupuestoBasico      Float?   // Nuevo campo para presupuesto básico
+  presupuestoIntermedio  Float?   // Nuevo campo para presupuesto intermedio
+  presupuestoPremium     Float?   // Nuevo campo para presupuesto premium
+  matricula      String?
+  clienteId      Int?
+  vehiculoId     Int
+  presupuesto PresupuestoVehiculo?
+  cliente        Cliente?   @relation(fields: [clienteId], references: [id])
+  vehiculo       Vehiculo   @relation(fields: [vehiculoId], references: [id])
+  garantias      Garantia[]
+  facturas       Factura[]
+  recibos        Recibo[]
+  servicios      Json       // Nuevo campo: array de servicios
+}
+
+enum EstadoCita {
+  pendiente
+  completada
+  cancelada
+}
+
+model Garantia {
+  id          Int      @id @default(autoincrement())
+  clienteId   Int
+  citaId      Int      @unique
+  descripcion String
+  fechaInicio DateTime
+  fechaFin    DateTime
+  matricula   String?
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  cita        Cita     @relation(fields: [citaId], references: [id])
+}
+
+model FacturaItem {
+  id          Int     @id @default(autoincrement())
+  facturaId   Int
+  descripcion String
+  cantidad    Int
+  precioUnit  Float
+  factura     Factura @relation(fields: [facturaId], references: [id])
+}
+
+model Factura {
+  id          Int           @id @default(autoincrement())
+  fecha       DateTime      @default(now())
+  clienteId   Int
+  citaId      Int?
+  subtotal    Float
+  total       Float
+  iva         Float
+  numeroAnual Int           // Número correlativo anual
+  cliente     Cliente       @relation(fields: [clienteId], references: [id])
+  cita        Cita?         @relation(fields: [citaId], references: [id])
+  items       FacturaItem[]
+  matricula   String?
+  direccion_completa String?
+  nombre_cliente String?
+  dni_nie String?
+  servicios   Json          // Nuevo campo: array de servicios
+}
+
+model ReciboItem {
+  id          Int    @id @default(autoincrement())
+  reciboId    Int
+  descripcion String
+  cantidad    Int    @default(1)
+  precioUnit  Float
+  recibo      Recibo @relation(fields: [reciboId], references: [id])
+}
+
+model Recibo {
+  id          Int          @id @default(autoincrement())
+  clienteId   Int
+  citaId      Int
+  monto       Float
+  fecha       DateTime     @default(now())
+  descripcion String?
+  numeroAnual Int          // Número correlativo anual
+  cliente     Cliente      @relation(fields: [clienteId], references: [id])
+  cita        Cita?        @relation(fields: [citaId], references: [id])
+  items       ReciboItem[]
+  estado      String       @default("pendiente")
+  matricula   String?
+}
+
+model Transaccion {
+  id           Int               @id @default(autoincrement())
+  tipo         TipoTransaccion
+  categoria    String
+  descripcion  String
+  monto        Float
+  fecha        DateTime          @default(now())
+  origen       OrigenTransaccion
+  referenciaId Int?
+  numeroFacturaGasto String? @db.VarChar(30)
+  @@unique([origen, referenciaId])
+}
+
+enum TipoTransaccion {
+  ingreso
+  gasto
+}
+
+enum OrigenTransaccion {
+  factura
+  recibo
+  manual
+}
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  email     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+}
+
+model PresupuestoVehiculo {
+  id             Int       @id @default(autoincrement())
+  vehiculoId     Int
+  citaId         Int       @unique
+  descripcion    String
+  presupuestoMin Float
+  presupuestoMax Float
+  fecha          DateTime  @default(now())
+
+  vehiculo       Vehiculo  @relation(fields: [vehiculoId], references: [id])
+ cita     Cita  @relation(fields: [citaId], references: [id], onDelete: Cascade)
+}
+
