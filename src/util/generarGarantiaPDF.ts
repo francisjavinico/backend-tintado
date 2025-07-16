@@ -55,7 +55,7 @@ export async function generarGarantiaPDF(citaId: number): Promise<Buffer> {
   } else if (tipoLamina.toLowerCase().includes("nanoceramica")) {
     textoLamina =
       "La lámina nanocerámica instalada proporciona máxima protección térmica y visibilidad superior.";
-    aniosGarantia = "10 años de garantía";
+    aniosGarantia = "15 años de garantía";
   } else if (tipoLamina.toLowerCase().includes("nanocarbon")) {
     textoLamina =
       "La lámina nanocarbon instalada combina alta protección solar con tecnología avanzada de carbono.";
