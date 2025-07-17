@@ -10,5 +10,5 @@ export const errorHandler = (
   const status = error.status || 500;
   res
     .status(status)
-    .json({ error: error.message || "Error interno del servidor" });
+    .json({ message: error.message || "Error interno del servidor" });
 };

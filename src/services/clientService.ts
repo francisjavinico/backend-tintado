@@ -2,7 +2,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { ConflictError } from "@src/errors/ConflictError";
 import { NotFoundError } from "@src/errors/NotFoundError";
 import { ValidationError } from "@src/errors/ValidationError";
-import { clientSchema } from "@src/schemas/clientSchema";
+import { clientSchema, clientEditSchema } from "@src/schemas/clientSchema";
 
 const prisma = new PrismaClient();
 type ClientCreateInput = Prisma.ClienteCreateInput;
@@ -102,7 +102,7 @@ export async function updateClientService(
   id: number,
   client: UpdateCreateInput
 ) {
-  const parsedData = clientSchema.safeParse(client);
+  const parsedData = clientEditSchema.safeParse(client);
   if (!parsedData.success) {
     const errors = parsedData.error.message;
     throw new ValidationError(errors);
