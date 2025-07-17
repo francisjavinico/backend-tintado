@@ -57,11 +57,10 @@ model Cita {
   descripcion    String?
   estado         EstadoCita
   telefono       String
-  presupuestoMin Float
-  presupuestoMax Float
-  presupuestoBasico      Float?   // Nuevo campo para presupuesto básico
-  presupuestoIntermedio  Float?   // Nuevo campo para presupuesto intermedio
-  presupuestoPremium     Float?   // Nuevo campo para presupuesto premium
+  presupuestoMax Float?     // Cambiado a opcional
+  presupuestoBasico      Float?   // Ya es opcional
+  presupuestoIntermedio  Float?   // Ya es opcional
+  presupuestoPremium     Float?   // Ya es opcional
   matricula      String?
   clienteId      Int?
   vehiculoId     Int

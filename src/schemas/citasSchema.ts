@@ -7,7 +7,6 @@ const citasSchema = {
     .refine((val) => !isNaN(Date.parse(val)), "La fecha no es válida."),
   estado: z.enum(["pendiente", "completada", "cancelada"]),
   telefono: z.string().min(1, "El teléfono es obligatorio"),
-  presupuestoMin: z.number().nonnegative().optional().nullable(),
   presupuestoMax: z.number().nonnegative().optional().nullable(),
   presupuestoBasico: z.number().nonnegative().optional(),
   presupuestoIntermedio: z.number().nonnegative().optional(),
@@ -79,7 +78,7 @@ export const createCitaSchema = z
             "El presupuesto premium es obligatorio para Tintado de Lunas",
         });
       }
-      if (typeof data.presupuestoMax === "number") {
+      if (data.presupuestoMax !== undefined && data.presupuestoMax !== null) {
         ctx.addIssue({
           path: ["presupuestoMax"],
           code: z.ZodIssueCode.custom,
@@ -94,8 +93,20 @@ export const createCitaSchema = z
           message: "El presupuesto es obligatorio para este servicio",
         });
       }
+      if (
+        typeof data.presupuestoBasico === "number" ||
+        typeof data.presupuestoIntermedio === "number" ||
+        typeof data.presupuestoPremium === "number"
+      ) {
+        ctx.addIssue({
+          path: ["presupuestoBasico"],
+          code: z.ZodIssueCode.custom,
+          message: "Solo se debe enviar un presupuesto para este servicio",
+        });
+      }
     }
   });
+
 export const updateCitaSchema = z
   .object({
     ...citasSchema,
@@ -128,6 +139,32 @@ export const updateCitaSchema = z
           code: z.ZodIssueCode.custom,
           message:
             "El presupuesto premium es obligatorio para Tintado de Lunas",
+        });
+      }
+      if (data.presupuestoMax !== undefined && data.presupuestoMax !== null) {
+        ctx.addIssue({
+          path: ["presupuestoMax"],
+          code: z.ZodIssueCode.custom,
+          message: "No se debe enviar presupuestoMax para Tintado de Lunas",
+        });
+      }
+    } else {
+      if (typeof data.presupuestoMax !== "number") {
+        ctx.addIssue({
+          path: ["presupuestoMax"],
+          code: z.ZodIssueCode.custom,
+          message: "El presupuesto es obligatorio para este servicio",
+        });
+      }
+      if (
+        typeof data.presupuestoBasico === "number" ||
+        typeof data.presupuestoIntermedio === "number" ||
+        typeof data.presupuestoPremium === "number"
+      ) {
+        ctx.addIssue({
+          path: ["presupuestoBasico"],
+          code: z.ZodIssueCode.custom,
+          message: "Solo se debe enviar un presupuesto para este servicio",
         });
       }
     }

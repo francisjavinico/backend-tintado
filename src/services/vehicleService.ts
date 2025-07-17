@@ -155,7 +155,6 @@ export async function getVehiculosEstadisticasService() {
     where: { estado: "completada" },
     select: {
       vehiculoId: true,
-      presupuestoMin: true,
       presupuestoMax: true,
       presupuestoBasico: true, // <-- Añadido
       presupuestoIntermedio: true, // <-- Añadido
@@ -166,7 +165,6 @@ export async function getVehiculosEstadisticasService() {
     number,
     {
       total: number;
-      sumaMin: number;
       sumaMax: number;
       sumaBasico: number;
       sumaIntermedio: number;
@@ -180,7 +178,6 @@ export async function getVehiculosEstadisticasService() {
     if (!agrupadas[vId]) {
       agrupadas[vId] = {
         total: 0,
-        sumaMin: 0,
         sumaMax: 0,
         sumaBasico: 0,
         sumaIntermedio: 0,
@@ -189,8 +186,9 @@ export async function getVehiculosEstadisticasService() {
       };
     }
     agrupadas[vId].total += 1;
-    agrupadas[vId].sumaMin += cita.presupuestoMin;
-    agrupadas[vId].sumaMax += cita.presupuestoMax;
+    if (typeof cita.presupuestoMax === "number") {
+      agrupadas[vId].sumaMax += cita.presupuestoMax;
+    }
     if (typeof cita.presupuestoBasico === "number") {
       agrupadas[vId].sumaBasico += cita.presupuestoBasico;
       agrupadas[vId].countBasico += 1;
@@ -215,7 +213,6 @@ export async function getVehiculosEstadisticasService() {
       modelo: vehiculo.modelo,
       año: vehiculo.año,
       atenciones: datos.total,
-      promedioMin: Math.round(datos.sumaMin / datos.total),
       promedioMax: Math.round(datos.sumaMax / datos.total),
       promedioBasico:
         datos.countBasico > 0

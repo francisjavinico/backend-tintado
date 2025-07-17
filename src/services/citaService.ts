@@ -27,7 +27,6 @@ export async function crearCitaService(cita: Prisma.CitaUncheckedCreateInput) {
     fecha,
     matricula,
     presupuestoMax,
-    presupuestoMin,
     presupuestoBasico,
     presupuestoIntermedio,
     presupuestoPremium,
@@ -68,8 +67,8 @@ export async function crearCitaService(cita: Prisma.CitaUncheckedCreateInput) {
     const citaData: any = {
       estado,
       fecha,
-      presupuestoMax: typeof presupuestoMax === "number" ? presupuestoMax : 0, // Valor por defecto 0
-      presupuestoMin: typeof presupuestoMin === "number" ? presupuestoMin : 0, // Valor por defecto 0
+      presupuestoMax:
+        typeof presupuestoMax === "number" ? presupuestoMax : null,
       presupuestoBasico:
         typeof presupuestoBasico === "number" ? presupuestoBasico : null,
       presupuestoIntermedio:
@@ -98,7 +97,6 @@ export async function crearCitaService(cita: Prisma.CitaUncheckedCreateInput) {
         estado: true,
         fecha: true,
         presupuestoMax: true,
-        presupuestoMin: true,
         presupuestoBasico: true,
         presupuestoIntermedio: true,
         presupuestoPremium: true,
@@ -128,7 +126,6 @@ export async function getCitaIdService(id: number) {
       descripcion: true,
       estado: true,
       telefono: true,
-      presupuestoMin: true,
       presupuestoMax: true,
       presupuestoBasico: true,
       presupuestoIntermedio: true,
@@ -155,7 +152,6 @@ export async function getCitasService(clienteId?: number) {
       descripcion: true,
       estado: true,
       telefono: true,
-      presupuestoMin: true,
       presupuestoMax: true,
       presupuestoBasico: true,
       presupuestoIntermedio: true,
@@ -204,7 +200,6 @@ export async function updateCitaService(id: number, cita: CitaUpdateInput) {
   const dataToUpdate: Prisma.CitaUpdateInput = {
     ...restData,
     presupuestoMax: restData.presupuestoMax ?? undefined,
-    presupuestoMin: restData.presupuestoMin ?? undefined,
     presupuestoBasico: restData.presupuestoBasico ?? undefined,
     presupuestoIntermedio: restData.presupuestoIntermedio ?? undefined,
     presupuestoPremium: restData.presupuestoPremium ?? undefined,
@@ -231,7 +226,6 @@ export async function updateCitaService(id: number, cita: CitaUpdateInput) {
       estado: true,
       fecha: true,
       presupuestoMax: true,
-      presupuestoMin: true,
       presupuestoBasico: true,
       presupuestoIntermedio: true,
       presupuestoPremium: true,
