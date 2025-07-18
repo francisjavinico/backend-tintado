@@ -10,7 +10,9 @@ app.use(
         !origin ||
         origin === "http://localhost:5173" ||
         origin === "https://frontend-tintado.vercel.app" ||
-        /\.vercel\.app$/.test(origin)
+        /\.vercel\.app$/.test(origin) ||
+        origin === "https://www.ahumaglass.com" ||
+        origin === "https://ahumaglass.com"
       ) {
         callback(null, true);
       } else {
