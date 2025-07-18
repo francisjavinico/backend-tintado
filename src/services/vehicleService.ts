@@ -9,14 +9,30 @@ type VehicleCreateInput = Prisma.VehiculoCreateInput;
 
 // Service para crear nueva vehiculo
 export async function createVehicleService(vehicle: VehicleCreateInput) {
-  const vehicleParsedData = vehicleSchema.safeParse(vehicle);
+  // Ignorar el campo id si viene en el body
+  const { id, ...vehicleData } = vehicle as any;
+  // Convertir marca y modelo a mayúsculas antes de guardar
+  if (vehicleData.marca) vehicleData.marca = vehicleData.marca.toUpperCase();
+  if (vehicleData.modelo) vehicleData.modelo = vehicleData.modelo.toUpperCase();
+  console.log("[createVehicleService] Datos recibidos:", vehicleData);
+  const vehicleParsedData = vehicleSchema.safeParse(vehicleData);
   if (!vehicleParsedData.success) {
     throw new ValidationError(vehicleParsedData.error.message);
   }
   const { marca, modelo, año, numeroPuertas } = vehicleParsedData.data;
+  console.log("[createVehicleService] Buscando duplicado con:", {
+    marca,
+    modelo,
+    año,
+    numeroPuertas,
+  });
   const vehicleExist = await prisma.vehiculo.findFirst({
     where: { marca, modelo, año, numeroPuertas },
   });
+  console.log(
+    "[createVehicleService] Resultado búsqueda duplicado:",
+    vehicleExist
+  );
   if (vehicleExist) {
     throw new ConflictError("El vehiculo ya existe en la Base de Datos");
   }
@@ -81,11 +97,16 @@ export async function getVehiclesService({
     where.año = año;
   }
   if (search) {
-    where.OR = [
-      { marca: { contains: search } },
-      { modelo: { contains: search } },
-      { año: isNaN(Number(search)) ? undefined : Number(search) },
-    ];
+    const palabras = search.toUpperCase().split(/\s+/).filter(Boolean);
+    const orFilters = [];
+    for (const palabra of palabras) {
+      orFilters.push({ marca: { contains: palabra } });
+      orFilters.push({ modelo: { contains: palabra } });
+      if (!isNaN(Number(palabra))) {
+        orFilters.push({ año: Number(palabra) });
+      }
+    }
+    where.OR = orFilters;
   }
   // Normaliza page y pageSize por si llegan valores inválidos
   const safePage = typeof page === "number" && page > 0 ? page : 1;
@@ -101,12 +122,34 @@ export async function getVehiclesService({
     }),
     prisma.vehiculo.count({ where }),
   ]);
+  // Si hay búsqueda, filtrar en JS por la frase completa
+  let filteredVehicles = vehicles;
+  if (search) {
+    const frase = search.toUpperCase().trim().replace(/\s+/g, " ");
+    // 1. Buscar coincidencia exacta de la frase completa
+    filteredVehicles = vehicles.filter((v) => {
+      const texto = `${v.marca} ${v.modelo} ${v.año}`
+        .toUpperCase()
+        .replace(/\s+/g, " ");
+      return texto.includes(frase);
+    });
+    // 2. Si no hay resultados, buscar por palabras (todas deben estar presentes)
+    if (filteredVehicles.length === 0) {
+      const palabras = frase.split(" ");
+      filteredVehicles = vehicles.filter((v) => {
+        const texto = `${v.marca} ${v.modelo} ${v.año}`
+          .toUpperCase()
+          .replace(/\s+/g, " ");
+        return palabras.every((palabra) => texto.includes(palabra));
+      });
+    }
+  }
   return {
-    vehicles,
-    total,
+    vehicles: filteredVehicles,
+    total: filteredVehicles.length,
     page: safePage,
     pageSize: safePageSize,
-    totalPages: Math.ceil(total / safePageSize),
+    totalPages: Math.ceil(filteredVehicles.length / safePageSize),
   };
 }
 
