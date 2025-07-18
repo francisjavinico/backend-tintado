@@ -83,6 +83,20 @@ export async function createReciboService(data: any) {
       precioUnit: it.precioUnit,
     }));
 
+    // Validación: todos los items deben tener descripción
+    if (
+      itemsData.some(
+        (it: any) =>
+          !it.descripcion ||
+          typeof it.descripcion !== "string" ||
+          it.descripcion.trim() === ""
+      )
+    ) {
+      throw new ValidationError(
+        "Todos los items deben tener una descripción válida"
+      );
+    }
+
     await tx.reciboItem.createMany({ data: itemsData });
 
     return tx.recibo.findUnique({
@@ -203,14 +217,25 @@ export async function updateReciboService(id: number, data: any) {
 
     if (items) {
       await tx.reciboItem.deleteMany({ where: { reciboId: id } });
-      await tx.reciboItem.createMany({
-        data: items.map((it: any) => ({
-          reciboId: id,
-          descripcion: it.descripcion,
-          cantidad: it.cantidad,
-          precioUnit: it.precioUnit,
-        })),
-      });
+      const itemsData = items.map((it: any) => ({
+        reciboId: id,
+        descripcion: it.descripcion,
+        cantidad: it.cantidad,
+        precioUnit: it.precioUnit,
+      }));
+      if (
+        itemsData.some(
+          (it: any) =>
+            !it.descripcion ||
+            typeof it.descripcion !== "string" ||
+            it.descripcion.trim() === ""
+        )
+      ) {
+        throw new ValidationError(
+          "Todos los items deben tener una descripción válida"
+        );
+      }
+      await tx.reciboItem.createMany({ data: itemsData });
     }
 
     return tx.recibo.findUnique({
@@ -336,14 +361,25 @@ export async function createReciboAutoService(input: {
       },
     });
 
-    await tx.reciboItem.createMany({
-      data: items.map((i) => ({
-        reciboId: nuevoRecibo.id,
-        descripcion: i.descripcion,
-        cantidad: i.cantidad,
-        precioUnit: i.precioUnit,
-      })),
-    });
+    const itemsData = items.map((i) => ({
+      reciboId: nuevoRecibo.id,
+      descripcion: i.descripcion,
+      cantidad: i.cantidad,
+      precioUnit: i.precioUnit,
+    }));
+    if (
+      itemsData.some(
+        (it: any) =>
+          !it.descripcion ||
+          typeof it.descripcion !== "string" ||
+          it.descripcion.trim() === ""
+      )
+    ) {
+      throw new ValidationError(
+        "Todos los items deben tener una descripción válida"
+      );
+    }
+    await tx.reciboItem.createMany({ data: itemsData });
 
     return tx.recibo.findUnique({
       where: { id: nuevoRecibo.id },

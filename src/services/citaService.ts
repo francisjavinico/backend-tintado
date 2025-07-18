@@ -325,12 +325,34 @@ export async function finalizarCitaService(data: any) {
 
   if (generarFactura && factura) {
     const facturaPDF = await generarFacturaPDF(factura.id);
-    adjuntos.push({ filename: "factura.pdf", content: facturaPDF });
+    // Obtener el cliente asociado
+    const clienteFactura = await prisma.cliente.findUnique({
+      where: { id: factura.clienteId },
+    });
+    const nombreCliente =
+      [clienteFactura?.nombre, clienteFactura?.apellido]
+        .filter(Boolean)
+        .join(" ") || "Cliente";
+    adjuntos.push({
+      filename: `Factura - ${nombreCliente}.pdf`,
+      content: facturaPDF,
+    });
   }
 
   if (!generarFactura && recibo) {
     const reciboPDF = await generarReciboPDF(recibo.id);
-    adjuntos.push({ filename: "recibo.pdf", content: reciboPDF });
+    // Obtener el cliente asociado
+    const clienteRecibo = await prisma.cliente.findUnique({
+      where: { id: recibo.clienteId },
+    });
+    const nombreCliente =
+      [clienteRecibo?.nombre, clienteRecibo?.apellido]
+        .filter(Boolean)
+        .join(" ") || "Cliente";
+    adjuntos.push({
+      filename: `Recibo - ${nombreCliente}.pdf`,
+      content: reciboPDF,
+    });
   }
 
   // Cambiado: pasar tipoLamina a createGarantiaAutoService si algún servicio es Tintado de Lunas

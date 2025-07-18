@@ -6,7 +6,16 @@ const citasSchema = {
     .min(1, "La fecha es obligatoria.")
     .refine((val) => !isNaN(Date.parse(val)), "La fecha no es válida."),
   estado: z.enum(["pendiente", "completada", "cancelada"]),
-  telefono: z.string().min(1, "El teléfono es obligatorio"),
+  telefono: z.preprocess(
+    (val) => (typeof val === "string" ? val.replace(/\s+/g, "") : val),
+    z
+      .string()
+      .min(1, "El teléfono es obligatorio")
+      .regex(
+        /^((\+34|0034)?[6-7][0-9]{8})$/,
+        "El teléfono debe ser un número válido, con o sin prefijo (+34 o 0034)"
+      )
+  ),
   presupuestoMax: z.number().nonnegative().optional().nullable(),
   presupuestoBasico: z.number().nonnegative().optional(),
   presupuestoIntermedio: z.number().nonnegative().optional(),

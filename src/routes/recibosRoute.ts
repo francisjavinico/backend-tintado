@@ -8,6 +8,7 @@ import {
   getRecibosBalance,
   getReciboPDF,
   convertirReciboAFactura,
+  reenviarReciboEmail,
 } from "@src/controllers/ReciboController";
 import { authToken } from "@src/middlewares/authToken";
 import { authRole } from "@src/middlewares/authRole";
@@ -46,3 +47,5 @@ recibosRoute.post(
   authRole("admin", "empleado"),
   convertirReciboAFactura
 );
+
+recibosRoute.post("/:id/reenviar-email", authToken, reenviarReciboEmail);

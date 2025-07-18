@@ -12,6 +12,10 @@ import {
 } from "@src/services/reciboService";
 import { getRecibosQuerySchema } from "@src/schemas/reciboSchema";
 import { generarReciboPDF } from "@src/util/generarReciboPdf";
+import { sendEmail } from "@src/util/mailer";
+import { generarGarantiaPDF } from "@src/util/generarGarantiaPDF";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 // Crear un nuevo recibo
 export const pushRecibo = async (
@@ -122,5 +126,52 @@ export const convertirReciboAFactura = async (
     res.status(201).json(factura);
   } catch (error) {
     next(error);
+  }
+};
+
+export const reenviarReciboEmail = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ message: "ID inválido" });
+    return;
+  }
+  try {
+    const recibo = await getRecibosIdService(id);
+    if (!recibo || !recibo.cliente || !recibo.cliente.email) {
+      res.status(400).json({ message: "Datos del cliente incompletos" });
+      return;
+    }
+    const reciboPDF = await generarReciboPDF(recibo.id);
+    const nombreCliente =
+      [recibo.cliente.nombre, recibo.cliente.apellido]
+        .filter(Boolean)
+        .join(" ") || "Cliente";
+    const attachments = [
+      {
+        filename: `Recibo - ${nombreCliente}.pdf`,
+        content: reciboPDF,
+      },
+    ];
+    // Si existe garantía para la cita, adjuntarla
+    const garantia = await prisma.garantia.findUnique({
+      where: { citaId: recibo.citaId },
+    });
+    if (garantia) {
+      const garantiaPDF = await generarGarantiaPDF(recibo.citaId);
+      attachments.push({ filename: "garantia.pdf", content: garantiaPDF });
+    }
+    await sendEmail({
+      to: recibo.cliente.email,
+      subject: `Recibo N° ${recibo.numeroAnual} - Ahumaglass`,
+      html: `<p>Estimado/a ${nombreCliente},<br>Adjuntamos su recibo en PDF.<br>Gracias por confiar en nosotros.</p>`,
+      attachments,
+    });
+    res.json({ message: "Recibo enviado correctamente al cliente" });
+  } catch (error) {
+    res.status(500).json({ message: "No se pudo enviar el recibo" });
   }
 };

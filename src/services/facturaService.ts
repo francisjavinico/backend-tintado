@@ -120,7 +120,18 @@ export async function createFacturaService(data: any) {
       cantidad: it.cantidad,
       precioUnit: it.precioUnit,
     }));
-
+    if (
+      itemsData.some(
+        (it: any) =>
+          !it.descripcion ||
+          typeof it.descripcion !== "string" ||
+          it.descripcion.trim() === ""
+      )
+    ) {
+      throw new ValidationError(
+        "Todos los items deben tener una descripción válida"
+      );
+    }
     await tx.facturaItem.createMany({ data: itemsData });
 
     return tx.factura.findUnique({
@@ -268,14 +279,25 @@ export async function updateFacturaService(id: number, data: any) {
 
     if (items) {
       await tx.facturaItem.deleteMany({ where: { facturaId: id } });
-      await tx.facturaItem.createMany({
-        data: items.map((it: any) => ({
-          facturaId: id,
-          descripcion: it.descripcion,
-          cantidad: it.cantidad,
-          precioUnit: it.precioUnit,
-        })),
-      });
+      const itemsData = items.map((it: any) => ({
+        facturaId: id,
+        descripcion: it.descripcion,
+        cantidad: it.cantidad,
+        precioUnit: it.precioUnit,
+      }));
+      if (
+        itemsData.some(
+          (it: any) =>
+            !it.descripcion ||
+            typeof it.descripcion !== "string" ||
+            it.descripcion.trim() === ""
+        )
+      ) {
+        throw new ValidationError(
+          "Todos los items deben tener una descripción válida"
+        );
+      }
+      await tx.facturaItem.createMany({ data: itemsData });
     }
 
     return tx.factura.findUnique({

@@ -6,6 +6,7 @@ import {
   getFacturaPDF,
   pushFactura,
   putFactura,
+  reenviarFacturaEmail,
 } from "@src/controllers/FacturaController";
 import { authRole } from "@src/middlewares/authRole";
 import { authToken } from "@src/middlewares/authToken";
@@ -38,3 +39,5 @@ facturaRoute.get("/balance", authToken, getBalance);
 
 //EndPoint para obtener facturas en pdf
 facturaRoute.get("/:id/pdf", authToken, getFacturaPDF);
+
+facturaRoute.post("/:id/reenviar-email", authToken, reenviarFacturaEmail);

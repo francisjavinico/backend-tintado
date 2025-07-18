@@ -10,10 +10,16 @@ export const clientCreateSchema = z.object({
     .min(2, "Debe tener una longitud mayor a 2 caracteres")
     .max(25, "Debe tener una longitud menor o igual a 25 caracteres"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
-  telefono: z
-    .string()
-    .min(2, "Debe tener una longitud mayor a 2 caracteres")
-    .max(10, "Debe tener una longitud menor o igual a 10 caracteres"),
+  telefono: z.preprocess(
+    (val) => (typeof val === "string" ? val.replace(/\s+/g, "") : val),
+    z
+      .string()
+      .min(1, "El teléfono es obligatorio")
+      .regex(
+        /^((\+34|0034)?[6-7][0-9]{8})$/,
+        "El teléfono debe ser un número válido, con o sin prefijo (+34 o 0034)"
+      )
+  ),
   documentoIdentidad: z.preprocess(
     (val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
     z
@@ -43,10 +49,16 @@ export const clientEditSchema = z.object({
     .min(2, "Debe tener una longitud mayor a 2 caracteres")
     .max(25, "Debe tener una longitud menor o igual a 25 caracteres"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
-  telefono: z
-    .string()
-    .min(2, "Debe tener una longitud mayor a 2 caracteres")
-    .max(10, "Debe tener una longitud menor o igual a 10 caracteres"),
+  telefono: z.preprocess(
+    (val) => (typeof val === "string" ? val.replace(/\s+/g, "") : val),
+    z
+      .string()
+      .min(1, "El teléfono es obligatorio")
+      .regex(
+        /^((\+34|0034)?[6-7][0-9]{8})$/,
+        "El teléfono debe ser un número válido, con o sin prefijo (+34 o 0034)"
+      )
+  ),
   documentoIdentidad: z.preprocess(
     (val) => (typeof val === "string" && val.trim() === "" ? undefined : val),
     z
