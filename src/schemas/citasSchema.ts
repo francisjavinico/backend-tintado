@@ -178,3 +178,19 @@ export const updateCitaSchema = z
       }
     }
   });
+
+// Esquema específico para cancelar citas que permite valores null
+export const cancelCitaSchema = z.object({
+  fecha: z.string().optional(),
+  telefono: z.string().optional(),
+  presupuestoMax: z.number().nonnegative().optional().nullable(),
+  presupuestoBasico: z.number().nonnegative().optional().nullable(),
+  presupuestoIntermedio: z.number().nonnegative().optional().nullable(),
+  presupuestoPremium: z.number().nonnegative().optional().nullable(),
+  matricula: z.string().optional().nullable(),
+  clienteId: z.number().optional().nullable(),
+  vehiculoId: z.number().optional(),
+  estado: z.literal("cancelada"),
+  descripcion: z.string().optional().nullable(),
+  servicios: z.array(servicioSchema).optional(),
+});

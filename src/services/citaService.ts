@@ -1,7 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { NotFoundError } from "@src/errors/NotFoundError";
 import { ValidationError } from "@src/errors/ValidationError";
-import { createCitaSchema, updateCitaSchema } from "@src/schemas/citasSchema";
+import {
+  createCitaSchema,
+  updateCitaSchema,
+  cancelCitaSchema,
+} from "@src/schemas/citasSchema";
 import { createReciboAutoService } from "./reciboService";
 import { createGarantiaAutoService } from "./garantiaService";
 import { createFacturaService } from "./facturaService";
@@ -168,7 +172,10 @@ export async function getCitasService(clienteId?: number) {
 }
 
 export async function updateCitaService(id: number, cita: CitaUpdateInput) {
-  const parsed = updateCitaSchema.safeParse(cita);
+  // Usar el esquema correcto según el estado
+  const schema =
+    cita.estado === "cancelada" ? cancelCitaSchema : updateCitaSchema;
+  const parsed = schema.safeParse(cita);
   if (!parsed.success) throw new ValidationError(parsed.error.message);
 
   const citaExistente = await prisma.cita.findUnique({
@@ -177,20 +184,26 @@ export async function updateCitaService(id: number, cita: CitaUpdateInput) {
   });
   if (!citaExistente) throw new NotFoundError("Cita no encontrada");
 
-  if (!parsed.data.fecha) throw new ValidationError("La fecha es requerida");
+  // Solo validar fecha si no es cancelación
+  if (cita.estado !== "cancelada" && !parsed.data.fecha) {
+    throw new ValidationError("La fecha es requerida");
+  }
 
-  const existeConflicto = await prisma.cita.findFirst({
-    where: {
-      fecha: new Date(parsed.data.fecha),
-      NOT: { id },
-    },
-    select: { id: true },
-  });
+  // Solo validar conflicto de fecha si no es cancelación y hay fecha
+  if (cita.estado !== "cancelada" && parsed.data.fecha) {
+    const existeConflicto = await prisma.cita.findFirst({
+      where: {
+        fecha: new Date(parsed.data.fecha),
+        NOT: { id },
+      },
+      select: { id: true },
+    });
 
-  if (existeConflicto) {
-    throw new ValidationError(
-      "Ya existe una cita programada en esa fecha y hora."
-    );
+    if (existeConflicto) {
+      throw new ValidationError(
+        "Ya existe una cita programada en esa fecha y hora."
+      );
+    }
   }
 
   // Extrae clienteId, vehiculoId y el resto de los datos
@@ -199,21 +212,24 @@ export async function updateCitaService(id: number, cita: CitaUpdateInput) {
   // El tipo correcto para los datos de actualización
   const dataToUpdate: Prisma.CitaUpdateInput = {
     ...restData,
-    presupuestoMax: restData.presupuestoMax ?? undefined,
-    presupuestoBasico: restData.presupuestoBasico ?? undefined,
-    presupuestoIntermedio: restData.presupuestoIntermedio ?? undefined,
-    presupuestoPremium: restData.presupuestoPremium ?? undefined,
+    presupuestoMax: restData.presupuestoMax,
+    presupuestoBasico: restData.presupuestoBasico,
+    presupuestoIntermedio: restData.presupuestoIntermedio,
+    presupuestoPremium: restData.presupuestoPremium,
   };
 
   // Lógica para la relación con el cliente
-  if (clienteId === null || clienteId === undefined) {
+  if (clienteId === null) {
     dataToUpdate.cliente = { disconnect: true };
+  } else if (clienteId === undefined) {
+    // No modificar la relación del cliente si no se proporciona
+    delete dataToUpdate.cliente;
   } else {
     dataToUpdate.cliente = { connect: { id: clienteId } };
   }
 
   // Lógica para la relación con el vehículo
-  if (vehiculoId) {
+  if (vehiculoId !== undefined) {
     dataToUpdate.vehiculo = { connect: { id: vehiculoId } };
   }
 
